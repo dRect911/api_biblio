@@ -12,7 +12,29 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:{}@localhost:5432
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
 db = SQLAlchemy(app)
 
+CORS(app)
 
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Headers','Content-Type,Authorization,true')
+    response.headers.add('Access-Control-Allow-Methods','GET,PATCH,POST,DELETE,OPTIONS')
+    return response
+
+class Categorie(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    libelle = db.Column(db.String(30), nullable=False)
+    livres = db.relationship('Livre', backref='categorie')
+
+    def insert(self):
+        db.session.add(self)
+        db.session.commit()
+        
+    def update(self):
+        db.session.commit() 
+    
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
 
 
 class Livre(db.Model):
@@ -44,21 +66,6 @@ class Livre(db.Model):
             'categorie_id':self.categorie_id,
         }
 
-class Categorie(db.Model):
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    libelle = db.Column(db.String(30), nullable=False)
-    livres = db.relationship('Livre', backref='categorie', lazy=True)
-
-    def insert(self):
-        db.session.add(self)
-        db.session.commit()
-        
-    def update(self):
-        db.session.commit() 
-    
-    def delete(self):
-        db.session.delete(self)
-        db.session.commit()
 
 
 db.create_all()
