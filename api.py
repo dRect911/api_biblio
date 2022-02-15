@@ -36,11 +36,17 @@ class Categorie(db.Model):
         db.session.delete(self)
         db.session.commit()
 
+    def format_cat(self):
+        return {
+            'libelle': self.libelle
+        }
+
 
 class Livre(db.Model):
     __tablename__ = 'livres'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     isbn = db.Column(db.String(20), unique=True, nullable=False)
+    titre = db.Column(db.String(100), nullable=False)
     date_publication = db.Column(db.String(30), nullable=False)
     auteur = db.Column(db.String(100), nullable=False)
     editeur = db.Column(db.String(100), nullable=False)
@@ -60,6 +66,7 @@ class Livre(db.Model):
     def format_livre(self):
         return {
             'isbn':self.isbn,
+            'titre':self.titre,
             'date_publication':self.date_publication,
             'auteur':self.auteur,
             'editeur':self.editeur,
@@ -88,11 +95,12 @@ def liste_livres():
     elif request.method == 'POST':
         body = request.get_json()
         new_isbn = body.get('isbn', None)
+        new_titre = body.get('titre', None)
         new_date_publication = body.get('date_publication', None)
         new_auteur = body.get('auteur', None)
         new_editeur = body.get('editeur', None)
         new_categorie_id = body.get('categorie_id', None)
-        livre = Livre(isbn=new_isbn, date_publication=new_date_publication, auteur=new_auteur, editeur=new_editeur, categorie_id=new_categorie_id)
+        livre = Livre(isbn=new_isbn, titre=new_titre,date_publication=new_date_publication, auteur=new_auteur, editeur=new_editeur, categorie_id=new_categorie_id)
         livre.insert()
         return jsonify({
             'success':True,
@@ -109,6 +117,27 @@ def liste():
         'total_livres':Livre.query.count(),
         'livres':livres_formatted
     })
+
+@app.route('/categories', methods=['GET', 'POST'])
+def liste_categories():
+    if request.method == 'GET':
+        categories = Categorie.query.all()
+        categories_formatted = [cat.format_cat() for cat in categories]
+        return jsonify({
+            'success':True,
+            'total_categories':Categorie.query.count(),
+            'categories':categories_formatted
+        })
+    elif request.method == 'POST':
+        body = request.get_json()
+        new_libelle = body.get('libelle', None)
+        categorie = Categorie(libelle=new_libelle)
+        categorie.insert()
+        return jsonify({
+            'success':True,
+            'total_categories':Categorie.query.count(),
+            'categories':[cat.format_cat() for cat in Categorie.query.all()]
+        })
 
 
 
