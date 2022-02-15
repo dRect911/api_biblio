@@ -8,7 +8,7 @@ from flask_cors import CORS
 mdp = quote_plus('root')
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:{}@localhost:5432/biblio'.format(mdp)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:{}@localhost:5432/biblio1'.format(mdp)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
 db = SQLAlchemy(app)
 
@@ -108,15 +108,7 @@ def liste_livres():
             'livres':[ li.format_livre() for li in Livre.query.all()]
         })
 
-@app.route('/livre', methods=['GET'])
-def liste():
-    livres = Livre.query.all()
-    livres_formatted = [li.format_livre() for li in livres]
-    return jsonify({
-        'success':True,
-        'total_livres':Livre.query.count(),
-        'livres':livres_formatted
-    })
+
 
 @app.route('/categories', methods=['GET', 'POST'])
 def liste_categories():
@@ -137,6 +129,84 @@ def liste_categories():
             'success':True,
             'total_categories':Categorie.query.count(),
             'categories':[cat.format_cat() for cat in Categorie.query.all()]
+        })
+
+@app.route('/livres/<int:id>')
+def selectionner_un_livre(id):
+    livre=Livre.query.get(id)
+    if livre is None:
+        abort(404) 
+        #404 est le status code pour dire que la ressoruce n'existe pas
+    else:
+        return jsonify({
+            'success':True,
+            'selected_id':id,
+            'livre':livre.format_livre()
+        })
+
+@app.route('/livres/<int:id>',methods=['DELETE'])
+def delete_livre(id):
+    livre=Livre.query.get(id)
+    if livre is None:
+        abort(404) 
+        #404 est le status code pour dire que la ressoruce n'existe pas
+    else:
+        livre.delete()
+        return jsonify({
+            'success':True,
+            'id':id,
+            'livre':livre.format_livre(),
+            'total_livres':Livre.query.count()
+        })
+
+@app.route('/livres/<int:id>')
+def selectionner_une_categorie(id):
+    categorie=Categorie.query.get(id)
+    if categorie is None:
+        abort(404) 
+        #404 est le status code pour dire que la ressoruce n'existe pas
+    else:
+        return jsonify({
+            'success':True,
+            'selected_id':id,
+            'categorie':categorie.format_cat()
+        })
+
+@app.route('/livres/<int:id>',methods=['DELETE'])
+def delete_categorie(id):
+    categorie=Categorie.query.get(id)
+    if categorie is None:
+        abort(404) 
+        #404 est le status code pour dire que la ressoruce n'existe pas
+    else:
+        categorie.delete()
+        return jsonify({
+            'success':True,
+            'id':id,
+            'livre':categorie.format_cat(),
+            'total_livres':Categorie.query.count()
+        })
+
+
+@app.route('/livres/<int:id>',methods=['PATCH'])
+def modifier_livre(id):
+    
+    livre=Livre.query.get(id)
+    if livre is None:
+        abort(404)
+    else:
+        body=request.get_json()
+        livre.isbn = body.get('isbn', None)
+        livre.titre = body.get('titre', None)
+        livre.date_publication = body.get('date_publication', None)
+        livre.auteur = body.get('auteur', None)
+        livre.editeur = body.get('editeur', None)
+        livre.categorie_id = body.get('categorie_id', None)
+        livre.update()
+        return jsonify({
+            'success':True,
+            'updated_id':id,
+            'livre':livre.format()
         })
 
 
